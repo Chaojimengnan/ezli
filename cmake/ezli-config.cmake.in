@@ -1,0 +1,8 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+set(THIS_PROJECT_NAME @PROJECT_NAME@)
+
+include("\${CMAKE_CURRENT_LIST_DIR}/\${THIS_PROJECT_NAME}-config-targets.cmake")
+
+check_required_components(\${THIS_PROJECT_NAME})
