@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdio>
 #include <dirent.h> //目录项
 #include <fcntl.h>  //文件控制
 #include <unistd.h> //定义了符号常量
@@ -494,6 +495,82 @@ namespace fs {
      * @return int 若成功返回0，若出错，返回-1并设置errno
      */
     int remove(const char* pathname);
+
+    /**
+     * @brief 重命名文件，并在必要时在目录中移动它。如果newpath已经存在，它会被自动替换。
+     * 如果oldpath和newpath是一个已经存在的硬链接并且指向相同的文件，该函数不做任何事，并
+     * 返回一个操作成功的值。oldpath可以指定为一个目录，在这种情况下，newpath要么不存在，
+     * 要么它指定一个空目录。如果oldpath指向了符号链接，该符号链接将被重命名。如果newpath
+     * 指向了一个符号链接，该链接将被覆盖。
+     *
+     * @param oldpath 要重命名的(文件，目录，符号链接)的路径
+     * @param newpath 重命名的(文件，目录，符号链接)的路径
+     * @return int 若成功返回0，若出错，返回-1并设置errno
+     */
+    int rename(const char* oldpath, const char* newpath);
+
+    /**
+     * @brief 重命名文件，并在必要时在目录中移动它。如果newpath已经存在，它会被自动替换。
+     * 如果oldpath和newpath是一个已经存在的硬链接并且指向相同的文件，该函数不做任何事，并
+     * 返回一个操作成功的值。oldpath可以指定为一个目录，在这种情况下，newpath要么不存在，
+     * 要么它指定一个空目录。如果oldpath指向了符号链接，该符号链接将被重命名。如果newpath
+     * 指向了一个符号链接，该链接将被覆盖。
+     *
+     * @param olddirfd 目录fd或特殊值AT_FDCWD
+     * @param oldpath 若为相对路径，则相对于dirfd开始，若为绝对路径，则dirfd被忽略
+     * @param newdirfd 目录fd或特殊值AT_FDCWD
+     * @param newpath 若为相对路径，则相对于dirfd开始，若为绝对路径，则dirfd被忽略
+     * @return int 若成功返回0，若出错，返回-1并设置errno
+     */
+    int renameat(int olddirfd, const char* oldpath, int newdirfd, const char* newpath);
+
+    /**
+     * @brief 在linkpath创建一个包含target字符串的符号链接(符号链接的内容就是指向文件或目录的路径)。
+     * target可以是不存在的路径。如果linkpath已存在，不会对其进行覆盖。当跟随符号链接时，符号链接
+     * 本身的权限不相干，除非请求删除或重命名符号链接且链接位于设置了粘性位（S_ISVTX）的目录中。
+     *
+     * @param target 符号链接的内容，通常是一个指向文件或目录的路径，可以是不存在的路径(这种情况叫悬空链接)
+     * @param linkpath 创建符号链接的路径和名字
+     * @return int 若成功返回0，若出错，返回-1并设置errno
+     */
+    int symlink(const char* target, const char* linkpath);
+
+    /**
+     * @brief 在newdirfd和linkpath指定路径中创建一个包含target字符串的符号链接(符号链接的内容就是指向文件或目录的路径)。
+     * target可以是不存在的路径。如果linkpath已存在，不会对其进行覆盖。当跟随符号链接时，符号链接
+     * 本身的权限不相干，除非请求删除或重命名符号链接且链接位于设置了粘性位（S_ISVTX）的目录中。
+     *
+     * @param target 符号链接的内容，通常是一个指向文件或目录的路径，可以是不存在的路径(这种情况叫悬空链接)
+     * @param newdirfd 目录fd或特殊值AT_FDCWD
+     * @param linkpath 若为相对路径，则相对于dirfd开始，若为绝对路径，则dirfd被忽略
+     * @return int 若成功返回0，若出错，返回-1并设置errno
+     */
+    int symlinkat(const char* target, int newdirfd, const char* linkpath);
+
+    /**
+     * @brief 将pathname指定的符号链接的内容复制到大小为bufsiz的buf缓冲区中，
+     * 该函数不会在末尾添加'\0'。如果符号链接内容大小超过了bufsize，该函数会静默截断到bufsiz。
+     * 该系列函数用作open对符号链接的补充(open会跟随符号链接，但该系列函数复制符号链接本身内容)。
+     *
+     * @param pathname 指定要从中获取内容的符号链接
+     * @param buf [out] 用于接受符号链接内容的缓冲区
+     * @param bufsiz 缓冲区的大小
+     * @return ssize_t 若成功，返回放置在buf的字节数量(如果该数量等于bufsiz，那么可能发生截断)，出错返回-1并设置errno
+     */
+    ssize_t readlink(const char* pathname, char* buf, size_t bufsiz);
+
+    /**
+     * @brief 将dirfd和pathname指定的符号链接的内容复制到大小为bufsiz的buf缓冲区中，
+     * 该函数不会在末尾添加'\0'。如果符号链接内容大小超过了bufsize，该函数会静默截断到bufsiz。
+     * 该系列函数用作open对符号链接的补充(open会跟随符号链接，但该系列函数复制符号链接本身内容)。
+     *
+     * @param dirfd 目录fd或特殊值AT_FDCWD
+     * @param pathname 若为相对路径，则相对于dirfd开始，若为绝对路径，则dirfd被忽略
+     * @param buf [out] 用于接受符号链接内容的缓冲区
+     * @param bufsiz 缓冲区的大小
+     * @return ssize_t 若成功，返回放置在buf的字节数量(如果该数量等于bufsiz，那么可能发生截断)，出错返回-1并设置errno
+     */
+    ssize_t readlinkat(int dirfd, const char* pathname, char* buf, size_t bufsiz);
 
 } // namespace fs
 
